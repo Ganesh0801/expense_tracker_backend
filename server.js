@@ -8,23 +8,8 @@ dotenv.config();
 
 const app = express();
 
-// ✅ FIXED CORS
-app.use(cors({
-  origin: function(origin, callback) {
-    const allowed = [
-      'http://localhost:3000',
-      process.env.CLIENT_URL
-    ];
-    if (!origin || allowed.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+// ✅ CORS — must be before everything
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -36,7 +21,10 @@ app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/user', require('./routes/userRoutes'));
 
 // Health check
-app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'Server is running' }));
+app.get('/api/health', (req, res) => res.json({ 
+  status: 'OK', 
+  message: 'Server is running' 
+}));
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -44,7 +32,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: 'Internal server error' });
 });
 
-// MongoDB connection
+// MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
@@ -60,6 +48,9 @@ mongoose.connect(process.env.MONGO_URI)
       }
     });
   })
-  .catch(err => { console.error('❌ MongoDB error:', err); process.exit(1); });
+  .catch(err => { 
+    console.error('❌ MongoDB error:', err); 
+    process.exit(1); 
+  });
 
 module.exports = app;
