@@ -1,9 +1,23 @@
 const nodemailer = require('nodemailer');
 
+// const transporter = nodemailer.createTransport({
+//   host: process.env.SMTP_HOST,
+//   port: process.env.SMTP_PORT,
+//   auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+// });
+
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,        // ✅ false for port 587
+  requireTLS: true,     // ✅ force TLS
+  auth: { 
+    user: process.env.SMTP_USER, 
+    pass: process.env.SMTP_PASS  // must be Gmail App Password
+  },
+  tls: {
+    rejectUnauthorized: false   // ✅ avoids TLS errors on Render
+  }
 });
 
 exports.sendEmail = async ({ to, subject, html }) => {
