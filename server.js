@@ -8,15 +8,24 @@ dotenv.config();
 
 const app = express();
 
-// Middleware
-// app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000', credentials: true }));
+// ✅ FIXED CORS
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    process.env.CLIENT_URL
-  ],
-  credentials: true
+  origin: function(origin, callback) {
+    const allowed = [
+      'http://localhost:3000',
+      process.env.CLIENT_URL
+    ];
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -42,13 +51,10 @@ mongoose.connect(process.env.MONGO_URI)
     app.listen(process.env.PORT || 5000, () => {
       console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
     });
-
-    // Monthly PDF cron job - runs last day of each month at 11:59 PM
     cron.schedule('59 23 28-31 * *', async () => {
       const now = new Date();
       const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
       if (now.getDate() === lastDay) {
-        console.log('📊 Running monthly report generation...');
         const { generateMonthlyReports } = require('./utils/reportGenerator');
         await generateMonthlyReports();
       }
