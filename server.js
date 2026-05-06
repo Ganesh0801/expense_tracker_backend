@@ -8,8 +8,9 @@ dotenv.config();
 
 const app = express();
 
-// ✅ CORS — must be before everything
+// ✅ CORS — open for all origins (works for Vercel + local)
 app.use(cors());
+app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -21,10 +22,7 @@ app.use('/api/reports', require('./routes/reportRoutes'));
 app.use('/api/user', require('./routes/userRoutes'));
 
 // Health check
-app.get('/api/health', (req, res) => res.json({ 
-  status: 'OK', 
-  message: 'Server is running' 
-}));
+app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'Server is running' }));
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -32,7 +30,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: 'Internal server error' });
 });
 
-// MongoDB
+// MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
     console.log('✅ MongoDB connected');
@@ -43,14 +41,12 @@ mongoose.connect(process.env.MONGO_URI)
       const now = new Date();
       const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
       if (now.getDate() === lastDay) {
+        console.log('📊 Running monthly report generation...');
         const { generateMonthlyReports } = require('./utils/reportGenerator');
         await generateMonthlyReports();
       }
     });
   })
-  .catch(err => { 
-    console.error('❌ MongoDB error:', err); 
-    process.exit(1); 
-  });
+  .catch(err => { console.error('❌ MongoDB error:', err); process.exit(1); });
 
 module.exports = app;
